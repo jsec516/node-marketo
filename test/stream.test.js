@@ -64,13 +64,20 @@ describe('Stream', function() {
 
   it('ends the stream if there is an error', function(done) {
     var count = 0;
+    var client = require('./helper/connection');
+    client.list.getLeads = function(listId, resumeOptions) {
+      console.log('calling mock with ', listId, ' resume ', resumeOptions);
+      return getMarketoResult(10, false, false);
+    };
 
-    Marketo.streamify(getMarketoResult(10, true, true))
+    Marketo.streamify(getMarketoResult(10, true, true), client, 5)
       .on('data', function() {
+        console.log('we got result');
         assert(false, 'We should not get data on error');
+        done();
       })
       .on('error', function(err) {
-        assert.notEqual(err.errors.length, 0);
+        assert.equal(err.code, 605);
       })
       .on('end', function() {
         // pagination happens only once, so we expect to have twice
